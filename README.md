@@ -92,7 +92,7 @@ A commit is a hash string representing the state of a repository at a certain po
 ## 🙏 Acknowledgments
 
 - [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3)
-- [zzh20188/GKI_KernelSU_SUSFS](https://github.com/zzh20188/GKI_KernelSU_SUSFS) / [WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS)
+- [zzh20188/GKI_KernelSU_SUSFS](https://github.com/zzh20188/GKI_KernelSU_SUSFS) / [WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS) / [LingLuo17/AnyKernel3](https://github.com/LingLuo17/AnyKernel3)
 - [SukiSU](https://sukisu.org/) / [ReSukiSU](https://resukisu.github.io/)
 - [SUSFS](https://gitlab.com/simonpunk/susfs4ksu)
 
@@ -210,7 +210,7 @@ A commit is a hash string representing the state of a repository at a certain po
 ## 🙏 致谢
 
 - [osm0sis/AnyKernel3](https://github.com/osm0sis/AnyKernel3)
-- [zzh20188/GKI_KernelSU_SUSFS](https://github.com/zzh20188/GKI_KernelSU_SUSFS) / [WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS)
+- [zzh20188/GKI_KernelSU_SUSFS](https://github.com/zzh20188/GKI_KernelSU_SUSFS) / [WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS) / [LingLuo17/AnyKernel3](https://github.com/LingLuo17/AnyKernel3)
 - [SukiSU](https://sukisu.org/) / [ReSukiSU](https://resukisu.github.io/)
 - [SUSFS](https://gitlab.com/simonpunk/susfs4ksu)
 
