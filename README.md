@@ -20,7 +20,7 @@
 Built upon [AnyKernel3](https://github.com/osm0sis/AnyKernel3), this repository uses GitHub Actions to automatically compile Android GKI kernels. It integrates multiple KernelSU variants and SUSFS kernel-level spoofing solutions Add practical patches such as ZRAM and BBG.
 
 - The build workflows are adapted from [zzh20188/GKI_KernelSU_SUSFS](https://github.com/zzh20188/GKI_KernelSU_SUSFS) and [Wild Kernels](https://github.com/WildKernels/GKI_KernelSU_SUSFS)
-- Flashing rule: ***It can be flashed as long as the kernel version matches.*** The AnyKernel3 package performs **no boot/kernel version check** and has **no Android system version restriction** — one kernel zip (e.g. `5.10.226`) flashes and boots on devices running Android 12 / 13 / 14 / 15 / 16 / **17** alike. The `androidXX` in a build name is the GKI branch the kernel was built from (its KMI), **not** the required system version.
+- Flashing rule: ***It can be flashed as long as the kernel version matches.*** The AnyKernel3 package performs **no boot/kernel version check** and has **no Android system version restriction** — one kernel zip (e.g. `5.10.226`) flashes and boots on devices running Android 12 / 13 / 14 / 15 / 16 / **17** alike (not guaranteed on every device). The `androidXX` in a build name is the GKI branch the kernel was built from (its KMI), **not** the required system version.
 
 ## 📦 Supported Kernel Versions
 
@@ -33,7 +33,7 @@ Built upon [AnyKernel3](https://github.com/osm0sis/AnyKernel3), this repository 
 | 16 | 6.12 | `kernel-a16-6-12.yml` |
 | Custom | Any | `kernel-custom.yml` |
 
-> 📱 **System version compatibility**: kernel version and Android system version are independent under GKI. As long as the device's current GKI kernel version matches the zip (5.10 ↔ 5.10, 6.6 ↔ 6.6, …), the package can be flashed and boots regardless of whether the system is Android 12, 13, 14, 15, 16 or 17. Devices that keep the generic ramdisk in `init_boot` (Android 13+) are detected automatically and flashed kernel-only.
+> 📱 **System version compatibility**: kernel version and Android system version are independent under GKI. As long as the device's current GKI kernel version matches the zip (5.10 ↔ 5.10, 6.6 ↔ 6.6, …), flashing this AK3 package boots normally (not guaranteed on every device), regardless of whether the system is Android 12, 13, 14, 15, 16 or 17. Devices that keep the generic ramdisk in `init_boot` (Android 13+) are detected automatically and flashed kernel-only.
 
 ## ✨ Features
 
@@ -137,7 +137,7 @@ A commit is a hash string representing the state of a repository at a certain po
 本仓库基于 [AnyKernel3](https://github.com/osm0sis/AnyKernel3) 构建，通过 GitHub Actions 自动编译 **Android GKI 内核**，集成多种 KernelSU 变体与 SUSFS 内核级隐藏方案并附加 ZRAM、BBG等实用补丁。
 
 - 构建工作流修改自 [zzh20188/GKI_KernelSU_SUSFS](https://github.com/zzh20188/GKI_KernelSU_SUSFS) 与 [Wild Kernels](https://github.com/WildKernels/GKI_KernelSU_SUSFS)
-- 刷入规则：***只要内核版本匹配即可刷入***。AnyKernel3 刷入包**不做 boot/内核版本校验**、**不限制 Android 系统版本**——同一个内核包（如 `5.10.226`）在 Android 12 / 13 / 14 / 15 / 16 / **17** 系统上均可刷入并正常开机。构建名称中的 `androidXX` 指内核编译所用的 GKI 分支（KMI），**不是**要求的系统版本。
+- 刷入规则：***只要内核版本匹配即可刷入***。AnyKernel3 刷入包**不做 boot/内核版本校验**、**不限制 Android 系统版本**——同一个内核包（如 `5.10.226`）在 Android 12 / 13 / 14 / 15 / 16 / **17** 系统上均可刷入并正常开机（不保证所有设备）。构建名称中的 `androidXX` 指内核编译所用的 GKI 分支（KMI），**不是**要求的系统版本。
 
 ## 📦 支持的内核版本
 
@@ -150,7 +150,7 @@ A commit is a hash string representing the state of a repository at a certain po
 | 16 | 6.12 | `kernel-a16-6-12.yml` |
 | 自定义 | 任意 | `kernel-custom.yml` |
 
-> 📱 **系统版本兼容性**：GKI 机制下内核版本与系统版本相互独立。只要设备当前的 GKI 内核版本与刷入包一致（5.10 对 5.10、6.6 对 6.6……），无论系统是 Android 12、13、14、15、16 还是 17 都可以刷入并正常开机。设备的通用 ramdisk 在 `init_boot` 分区（Android 13+）时会自动识别并仅刷写内核。
+> 📱 **系统版本兼容性**：GKI 机制下内核版本与系统版本相互独立。只要设备当前的 GKI 内核版本与刷入包一致（5.10 对 5.10、6.6 对 6.6……），无论系统是 Android 12、13、14、15、16 还是 17，刷入该 AK3 都能正常开机（不保证所有设备）。设备的通用 ramdisk 在 `init_boot` 分区（Android 13+）时会自动识别并仅刷写内核。
 
 ## ✨ 功能特性
 
