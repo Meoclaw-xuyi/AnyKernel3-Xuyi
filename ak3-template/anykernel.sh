@@ -2,17 +2,17 @@
 ## osm0sis @ xda-developers
 ##
 ## Universal GKI flash template (installed by the build pipeline over the upstream
-## WildKernels script before packaging):
-##   - no boot/kernel version check (do.check_boot_version=0)
-##   - no Android system version restriction (supported.versions cleared):
-##     one kernel zip flashes on Android 12/13/14/15/16/17 systems alike
-##   - only rule: the zip's kernel version must match the GKI kernel version the
-##     device is currently running (e.g. a 5.10.x zip on a 5.10 GKI device)
+## WildKernels script before packaging). The pipeline injects the target-system
+## gate below at build time (TARGET_SYS, controlled by the a17_compat switch):
+##   - a12-16 (default, switch off): only Android 12/13/14/15/16 systems can flash
+##   - a17    (switch on):           only Android 17 systems can flash
+## Kernel rule (unchanged, GKI): the zip's kernel version must match the GKI kernel
+## version the device is currently running (e.g. a 5.10.x zip on a 5.10 GKI device).
 
 ### AnyKernel setup
 # global properties
 properties() { '
-kernel.string=GKI Kernel (KernelSU + SUSFS) - Universal Android 12-17
+kernel.string=GKI Kernel (KernelSU + SUSFS)
 do.devicecheck=0
 do.modules=0
 do.systemless=0
@@ -41,6 +41,33 @@ no_magisk_check=1
 
 # import functions/variables and setup patching - see for reference (DO NOT REMOVE)
 . tools/ak3-core.sh
+
+# ---- target system gate (injected at build time: a12-16 or a17) ----
+TARGET_SYS="@@TARGET_SYS@@"
+
+sys_ver=$(getprop ro.build.version.release 2>/dev/null | tr -d '[:space:]')
+sys_sdk=$(getprop ro.build.version.sdk 2>/dev/null | tr -d '[:space:]')
+allowed=false
+case "$TARGET_SYS" in
+    a17)
+        range_text="Android 17"
+        case "$sys_ver" in 17|17.*) allowed=true ;; esac
+        [ "$sys_sdk" = "37" ] && allowed=true
+        ;;
+    *)
+        TARGET_SYS="a12-16"
+        range_text="Android 12-16"
+        case "$sys_ver" in 12|12.*|13|13.*|14|14.*|15|15.*|16|16.*) allowed=true ;; esac
+        case "$sys_sdk" in 31|32|33|34|35|36) allowed=true ;; esac
+        ;;
+esac
+
+if [ "$allowed" != true ]; then
+    ui_print " " "  -> This package supports $range_text systems only."
+    ui_print "  -> Detected system: ${sys_ver:-unknown} (SDK ${sys_sdk:-unknown})."
+    abort "  -> System version mismatch, aborting."
+fi
+ui_print " " "  -> System check passed: ${sys_ver:-unknown} (target $range_text)."
 
 # Environment hint only - never fatal: in a recovery/installer the kernel that runs
 # here is the installer kernel, not necessarily the ROM's kernel. The list covers
@@ -75,6 +102,6 @@ else
 fi
 
 ui_print " "
-ui_print "  -> Universal GKI package: system version agnostic (Android 12-17)."
+ui_print "  -> Target systems: $range_text."
 ui_print "     Kernel must match the device's GKI kernel version (e.g. 5.10.x)."
 ui_print " "

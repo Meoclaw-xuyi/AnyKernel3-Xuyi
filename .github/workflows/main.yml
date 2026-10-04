@@ -117,9 +117,9 @@ on:
         default: false
 
         a17_compat:
-          description: "适配 Android 17（通用刷入模板，系统版本 12-17 通刷；关闭=上游脚本仅认 5.10~6.12）"
+          description: "适配 Android 17 系统版本（默认关闭：仅 Android 12-16 系统可刷入；开启：仅 Android 17 系统可刷入）"
           type: boolean
-          default: true
+          default: false
 
       # ==================== 构建版本选择 ====================
       build_a12_5_10:
@@ -552,9 +552,9 @@ jobs:
         run: |
           BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
           if [ "${{ inputs.a17_compat }}" != "false" ]; then
-            A17_NOTE="> 内核包不限制 Android 系统版本（GKI 机制）：例如 5.10.x 的包可刷入运行 Android 12–17 系统的设备，但设备当前内核必须是同版本系（5.10.x ↔ 5.10.x）。"
+            A17_NOTE="> 本包适配 Android 17 系统版本：仅 Android 17 系统可正常刷入；设备当前内核须与包同版本系（如 5.10.x ↔ 5.10.x）。"
           else
-            A17_NOTE="> 本次构建未开启 A17 兼容：刷入包保留上游脚本，仅支持 5.10/5.15/6.1/6.6/6.12 内核环境。"
+            A17_NOTE="> 本包面向 Android 12-16 系统版本：仅 Android 12/13/14/15/16 系统可正常刷入；设备当前内核须与包同版本系（如 5.10.x ↔ 5.10.x）。"
           fi
           if [[ "$KSU_REF" =~ ^[0-9a-f]{40}$ ]]; then
             KSU_DISPLAY_REF="${KSU_REF:0:7}"

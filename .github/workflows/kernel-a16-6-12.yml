@@ -96,10 +96,10 @@ on:
         type: boolean
         default: false
       a17_compat:
-        description: "适配 Android 17（通用刷入模板：系统版本 12-17 通刷，不做内核/系统版本硬校验；关闭=上游脚本仅认 5.10/5.15/6.1/6.6/6.12）"
+        description: "适配 Android 17 系统版本（默认关闭：刷入包仅允许 Android 12-16 系统刷入；开启：仅允许 Android 17 系统刷入）"
         required: false
         type: boolean
-        default: true
+        default: false
   workflow_call:
     inputs:
       kernelsu_variant:
@@ -158,7 +158,7 @@ on:
       a17_compat:
         required: false
         type: boolean
-        default: true
+        default: false
       called_from_main:
         description: "是否从 main.yml 调用（内部使用）"
         required: false
