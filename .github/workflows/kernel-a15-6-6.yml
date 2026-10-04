@@ -195,6 +195,8 @@ jobs:
             os_patch_level: "2026-04"
           - sub_level: "139"
             os_patch_level: "2026-07"
+          - sub_level: "143"
+            os_patch_level: "2026-10"
           - sub_level: "X"
             os_patch_level: "lts"
             display_sub: "144"
