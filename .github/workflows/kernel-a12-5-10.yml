@@ -1,3 +1,4 @@
+# re-saved: register workflows on the standalone repo (Actions indexing quirk)
 name: 内核构建 - Android 12 (5.10)
 
 permissions:
