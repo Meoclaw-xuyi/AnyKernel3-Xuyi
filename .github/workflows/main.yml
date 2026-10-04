@@ -116,6 +116,11 @@ on:
         type: boolean
         default: false
 
+        a17_compat:
+          description: "适配 Android 17（通用刷入模板，系统版本 12-17 通刷；关闭=上游脚本仅认 5.10~6.12）"
+          type: boolean
+          default: true
+
       # ==================== 构建版本选择 ====================
       build_a12_5_10:
         description: "Android 12 - 5.10"
@@ -171,6 +176,7 @@ jobs:
       artifact_upload_mode: ${{ inputs.artifact_upload_mode }}
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync }}
       skip_incompatible: ${{ inputs.skip_incompatible || false }}
+      a17_compat: ${{ inputs.a17_compat }}
       called_from_main: true
 
   # ==================== Android 13 - 5.15 构建 ====================
@@ -193,6 +199,7 @@ jobs:
       artifact_upload_mode: ${{ inputs.artifact_upload_mode }}
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync }}
       skip_incompatible: ${{ inputs.skip_incompatible || false }}
+      a17_compat: ${{ inputs.a17_compat }}
       called_from_main: true
 
   # ==================== Android 14 - 6.1 构建 ====================
@@ -215,6 +222,7 @@ jobs:
       artifact_upload_mode: ${{ inputs.artifact_upload_mode }}
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync }}
       skip_incompatible: ${{ inputs.skip_incompatible || false }}
+      a17_compat: ${{ inputs.a17_compat }}
       called_from_main: true
 
   # ==================== Android 15 - 6.6 构建 ====================
@@ -237,6 +245,7 @@ jobs:
       artifact_upload_mode: ${{ inputs.artifact_upload_mode }}
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync }}
       skip_incompatible: ${{ inputs.skip_incompatible || false }}
+      a17_compat: ${{ inputs.a17_compat }}
       called_from_main: true
 
   # ==================== Android 16 - 6.12 构建 ====================
@@ -259,6 +268,7 @@ jobs:
       artifact_upload_mode: ${{ inputs.artifact_upload_mode }}
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync }}
       skip_incompatible: ${{ inputs.skip_incompatible || false }}
+      a17_compat: ${{ inputs.a17_compat }}
       called_from_main: true
 
   # ==================== 收集补丁冲突文件 ====================
@@ -541,6 +551,11 @@ jobs:
       - name: 生成发布说明
         run: |
           BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          if [ "${{ inputs.a17_compat }}" != "false" ]; then
+            A17_NOTE="> 内核包不限制 Android 系统版本（GKI 机制）：例如 5.10.x 的包可刷入运行 Android 12–17 系统的设备，但设备当前内核必须是同版本系（5.10.x ↔ 5.10.x）。"
+          else
+            A17_NOTE="> 本次构建未开启 A17 兼容：刷入包保留上游脚本，仅支持 5.10/5.15/6.1/6.6/6.12 内核环境。"
+          fi
           if [[ "$KSU_REF" =~ ^[0-9a-f]{40}$ ]]; then
             KSU_DISPLAY_REF="${KSU_REF:0:7}"
           else
@@ -623,7 +638,7 @@ jobs:
 
           > [!IMPORTANT]
           > 刷入前请备份原厂 Boot 镜像。
-          > 内核包不限制 Android 系统版本（GKI 机制）：例如 `5.10.x` 的包可刷入运行 Android 12–17 系统的设备，但设备当前内核必须是同版本系（5.10.x ↔ 5.10.x）。
+          $A17_NOTE
           > 如果设备无法启动，请先恢复原厂镜像，再提取 KernelSU 日志进行反馈。
 
           <details>

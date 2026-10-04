@@ -92,6 +92,11 @@ on:
         required: false
         type: boolean
         default: false
+      a17_compat:
+        description: "适配 Android 17（通用刷入模板：系统版本 12-17 通刷，不做内核/系统版本硬校验；关闭=上游脚本仅认 5.10/5.15/6.1/6.6/6.12）"
+        required: false
+        type: boolean
+        default: true
   workflow_call:
     inputs:
       kernelsu_variant:
@@ -144,6 +149,10 @@ on:
         required: false
         type: boolean
         default: false
+      a17_compat:
+        required: false
+        type: boolean
+        default: true
       called_from_main:
         description: "是否从 main.yml 调用（内部使用）"
         required: false
@@ -231,6 +240,7 @@ jobs:
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync || false }}
       artifact_upload_mode: ${{ inputs.artifact_upload_mode }}
       skip_incompatible: ${{ inputs.skip_incompatible || false }}
+      a17_compat: ${{ inputs.a17_compat }}
 
   # 仅在直接触发时运行，从 main.yml 调用时跳过
   get-ksu-manager:

@@ -50,6 +50,7 @@ Built upon [AnyKernel3](https://github.com/osm0sis/AnyKernel3), this repository 
 | 📱 OnePlus Snapdragon 8 Elite / Gen5 Support | Optional: Add support for OnePlus Snapdragon 8 Elite / Gen5 processor |
 | 🐳 Droidspaces | Optional container support with NTSync kernel compatibility patch |
 | 🧩 Skip Incompatible | Optional: auto-skip incompatible or unusable features (except SUSFS and OnePlus 8 Elite/Gen5 support) instead of failing the build |
+| 📱 A17 Compatibility Switch | Optional: choose at build time whether the zip ships the universal flash template (system-version agnostic, Android 12-17); off keeps the upstream script (5.10/5.15/6.1/6.6/6.12 only) |
 
 ## 🚀 Usage
 
@@ -167,6 +168,7 @@ A commit is a hash string representing the state of a repository at a certain po
 | 📱 一加 骁龙8 Elite/Gen5 支持 | 可选添加一加 骁龙8 Elite/Gen5 处理器支持 |
 | 🐳 Droidspaces | 可选容器支持及 NTSync 内核兼容补丁 |
 | 🧩 兼容跳过 | 可选：功能不兼容或无法使用时自动跳过该功能（SUSFS 与 一加 骁龙8 Elite/Gen5 支持除外，二者失败仍会中断构建），不中断构建 |
+| 📱 A17 兼容开关 | 可选：构建时选择刷入包是否搭载通用刷入模板（系统版本 12-17 通刷）；关闭则保留上游脚本（仅认 5.10/5.15/6.1/6.6/6.12） |
 
 ## 🚀 使用方法
 

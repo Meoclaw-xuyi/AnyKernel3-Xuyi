@@ -95,6 +95,10 @@ on:
         required: false
         type: boolean
         default: false
+      a17_compat:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   build-kernel:
@@ -131,6 +135,7 @@ jobs:
           echo "Droidspaces   : ${{ inputs.droidspaces }}"
           echo "NTSync        : ${{ inputs.droidspaces_ntsync }}"
           echo "兼容跳过      : ${{ inputs.skip_incompatible }}"
+          echo "A17 兼容       : ${{ inputs.a17_compat }}"
           echo "产物上传模式  : ${{ inputs.artifact_upload_mode }}"
           echo "========================================"
 
@@ -299,9 +304,15 @@ jobs:
       # 通用模板不做任何版本硬校验（supported.versions 清空、未知内核仅提示），
       # 并自动识别 init_boot 布局（Android 13+ 仅刷内核），系统版本 12-17 通刷。
       - name: 应用通用 AnyKernel3 刷入模板（Android 12-17 无系统版本限制）
+        if: inputs.a17_compat != false
         run: |
           cp -f "$GITHUB_WORKSPACE/ak3-template/anykernel.sh" "$ANYKERNEL3/anykernel.sh"
           echo "已覆盖上游 anykernel.sh：刷入包不再按内核/系统版本硬中断（Android 17 / 6.18 环境亦可刷入）"
+
+      - name: A17 兼容已关闭（保留上游刷入脚本）
+        if: inputs.a17_compat == false
+        run: |
+          echo "::notice title=A17 兼容已关闭::本次构建未应用通用模板，上游脚本仅识别 5.10/5.15/6.1/6.6/6.12 内核环境，A17/6.18 环境刷入会被 abort"
 
       - name: 初始化并同步内核源码
         working-directory: ${{ env.KERNEL_ROOT }}
