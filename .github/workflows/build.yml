@@ -1456,8 +1456,12 @@ jobs:
                 echo "pahole 版本: $(command -v pahole) $(pahole --version 2>&1)"
                 MAKEARGS="O=out ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 LD=ld.lld HOSTLD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf STRIP=llvm-strip BINDGEN=bindgen PAHOLE=/usr/local/bin/pahole -j$(nproc --all)"
                 make $MAKEARGS gki_defconfig
-                make $MAKEARGS Image
+                # 「准备 Boot 镜像」需要 Image.lz4（mkbootimg --kernel Image.lz4）；
+                # 本树 arch/arm64/boot/Makefile:31 自带 Image.lz4 规则（内核版 lz4 帧格式），
+                # 显式点名目标即可，与 Kleaf 路径产出的 Image.lz4 一致。
+                make $MAKEARGS Image Image.lz4
                 strings out/arch/arm64/boot/Image | grep "Linux version"
+                lz4 -t out/arch/arm64/boot/Image.lz4
               elif [ -f "build/build.sh" ]; then
                 LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
                 strings "out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" | grep 'Linux version'
