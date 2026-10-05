@@ -196,6 +196,25 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ccache python3 git curl build-essential libssl-dev bison flex libelf-dev dwarves lz4 libdw-dev
 
+      # 发行版自带的 pahole（dwarves 1.2x）对 per-CPU 变量有 4096 个的硬上限，
+      # sm8850 源码远超该数，pahole 会写出 libbpf 无法加载的 BTF，最终表现为：
+      #   BTF     .tmp_vmlinux1.btf.o
+      #   Reached the limit of per-CPU variables: 4096
+      #   BTFIDS  vmlinux
+      #   FAILED: load BTF from vmlinux: Invalid argument
+      # 故 BUILTIN_SOURCE（make 路径）改为源码编译新版 pahole 到 /usr/local/bin。
+      - name: 源码编译新版 pahole（BUILTIN_SOURCE 需要）
+        if: env.BUILTIN_SOURCE == 'true'
+        run: |
+          sudo apt-get install -y cmake zlib1g-dev
+          git clone --depth=1 https://git.kernel.org/pub/scm/devel/pahole/pahole.git /tmp/pahole
+          cmake -S /tmp/pahole -B /tmp/pahole/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/pahole/build -j"$(nproc --all)"
+          sudo cmake --install /tmp/pahole/build
+          hash -r
+          which pahole
+          pahole --version
+
       - name: 配置 ccache
         run: |
           mkdir -p ~/.cache/bazel
@@ -1429,7 +1448,8 @@ jobs:
               if [ "$BUILTIN_SOURCE" = "true" ]; then
                 cd common
                 grep -q "^CONFIG_LTO_NONE=y" arch/arm64/configs/gki_defconfig || echo "CONFIG_LTO_NONE=y" >> arch/arm64/configs/gki_defconfig
-                MAKEARGS="O=out ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 LD=ld.lld HOSTLD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf STRIP=llvm-strip BINDGEN=bindgen -j$(nproc --all)"
+                echo "pahole 版本: $(command -v pahole) $(pahole --version 2>&1)"
+                MAKEARGS="O=out ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 LD=ld.lld HOSTLD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf STRIP=llvm-strip BINDGEN=bindgen PAHOLE=/usr/local/bin/pahole -j$(nproc --all)"
                 make $MAKEARGS gki_defconfig
                 make $MAKEARGS Image
                 strings out/arch/arm64/boot/Image | grep "Linux version"
