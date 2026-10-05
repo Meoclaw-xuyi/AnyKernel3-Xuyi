@@ -1471,10 +1471,13 @@ jobs:
       - name: A17 模式：还原 LZ4 符号官方 CRC（修复厂商模块 CRC 拒载不开机）
         if: inputs.a17_compat == true
         run: |
-          if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
-            echo "::warning title=A17 CRC 还原跳过::内置官方 CRC 表仅覆盖 android15-6.6（android15-8 KMI）；${{ inputs.kernel_version }} 开启 ZRAM 时厂商模块可能仍因 CRC 不符拒载"
-            exit 0
-          fi
+          case "${{ inputs.kernel_version }}" in
+            6.6|6.12) ;;
+            *)
+              echo "::warning title=A17 CRC 还原跳过::内置官方 CRC 表仅覆盖 6.6（android15-8 KMI）与 6.12（android16 KMI）；${{ inputs.kernel_version }} 开启 ZRAM 时厂商模块可能仍因 CRC 不符拒载"
+              exit 0
+              ;;
+          esac
           if [ "${{ inputs.android_version }}" == "android12" ] || [ "${{ inputs.android_version }}" == "android13" ]; then
             TARGET_PATH="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
           else
@@ -1484,7 +1487,7 @@ jobs:
             echo "::error::未找到 $TARGET_PATH/Image，无法执行 A17 CRC 还原"
             exit 1
           fi
-          python3 "$GITHUB_WORKSPACE/scripts/a17_crc_restore.py" "$TARGET_PATH/Image"
+          python3 "$GITHUB_WORKSPACE/scripts/a17_crc_restore.py" "$TARGET_PATH/Image" "${{ inputs.kernel_version }}"
 
       - name: 应用 KPM 补丁（构建期修补 Image）
         if: startsWith(inputs.use_kpm, 'patched') && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'ReSukiSU')

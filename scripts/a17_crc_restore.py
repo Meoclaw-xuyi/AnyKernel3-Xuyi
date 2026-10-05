@@ -46,6 +46,29 @@ OFFICIAL = {
 }
 LZ4 = sorted(OFFICIAL)
 
+# android16-6.12 (KMI android16-5/6) official LZ4 CRCs - read out of a real
+# CI-built 6.12.69 Image WITHOUT the zram stack (clean branch-native CRCs,
+# device-proven: that exact build boots HyperOS4/A17 vendor modules).
+OFFICIAL_612 = {
+    b"LZ4_compress_HC":               0x2CF136FA,
+    b"LZ4_compress_HC_continue":      0x16AA5F1F,
+    b"LZ4_compress_default":          0xE04B6E87,
+    b"LZ4_compress_fast":             0x932EDF0D,
+    b"LZ4_compress_fast_continue":    0x755C86A3,
+    b"LZ4_decompress_safe":           0x7AA9B8BF,
+    b"LZ4_decompress_safe_continue":  0x1ADA4747,
+    b"LZ4_decompress_safe_partial":   0x1633528F,
+    b"LZ4_loadDict":                  0xCAE7EB86,
+    b"LZ4_loadDictHC":                0xF4C1D9FC,
+    b"LZ4_resetStreamHC":             0x930EF13E,
+    b"LZ4_setStreamDecode":           0xB0AC7316,
+}
+
+TABLES = {
+    "6.6": OFFICIAL,
+    "6.12": OFFICIAL_612,
+}
+
 
 def s32(b, off):
     return struct.unpack_from("<i", b, off)[0]
@@ -126,7 +149,7 @@ def resolve(b):
     raise SystemExit("::error::could not locate a ksymtab array with all 12 LZ4 symbols")
 
 
-def restore(path):
+def restore(path, table):
     b = open(path, "rb").read()
     print("Image: %d bytes" % len(b))
     base, count, found = resolve(b)
@@ -139,7 +162,7 @@ def restore(path):
         _e, idx = found[name]
         off = crc_base + 4 * idx
         cur = u32(out, off)
-        want = OFFICIAL[name]
+        want = table[name]
         if cur == want:
             print("    %-30s already official 0x%08x" % (name.decode(), cur))
             continue
@@ -156,16 +179,18 @@ def restore(path):
     # verify with a fresh parse
     nb = open(path, "rb").read()
     _b2, _c2, n_found = resolve(nb)
-    _e, _i = None, None
     crc2 = _b2 + 12 * _c2
-    bad = [n for n in LZ4 if u32(nb, crc2 + 4 * n_found[n][1]) != OFFICIAL[n]]
+    bad = [n for n in LZ4 if u32(nb, crc2 + 4 * n_found[n][1]) != table[n]]
     if bad:
         raise SystemExit("::error::CRC readback mismatch for %s" % [x.decode() for x in bad])
-    print("restored %d/12 LZ4 symbol CRCs to official android15-8 values (read back OK)" % changed)
+    print("restored %d/12 LZ4 symbol CRCs to official values (read back OK)" % changed)
     print("::notice title=A17 CRC restore::%d/12 LZ4 symbol CRCs restored to official OGKI values" % changed)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: a17_crc_restore.py <Image>")
-    restore(sys.argv[1])
+    if len(sys.argv) != 3:
+        raise SystemExit("usage: a17_crc_restore.py <Image> <kernel-version, e.g. 6.6|6.12>")
+    img, kv = sys.argv[1], sys.argv[2]
+    if kv not in TABLES:
+        raise SystemExit("::error::no official CRC table for kernel version %s" % kv)
+    restore(img, TABLES[kv])
