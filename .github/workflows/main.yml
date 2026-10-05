@@ -117,7 +117,7 @@ on:
         default: false
 
         a17_compat:
-          description: "适配 Android 17 系统版本（默认关闭：仅 Android 12-16 系统可刷入；开启：仅 Android 17 系统可刷入）"
+          description: "启用 支持Android17系统"
           type: boolean
           default: false
 

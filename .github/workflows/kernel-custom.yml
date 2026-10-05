@@ -281,18 +281,13 @@ on:
         required: true
         type: boolean
         default: false
-      supp_op:
-        description: "启用 一加 骁龙8 Elite/Gen5 支持"
-        required: false
-        type: boolean
-        default: false
       skip_incompatible:
         description: "功能不兼容或无法使用时自动跳过该功能（不中断构建）"
         required: false
         type: boolean
         default: false
       a17_compat:
-        description: "适配 Android 17 系统版本（默认关闭：刷入包仅允许 Android 12-16 系统刷入；开启：仅允许 Android 17 系统刷入）"
+        description: "启用 支持Android17系统"
         required: false
         type: boolean
         default: false
@@ -420,7 +415,6 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       use_rekernel: ${{ inputs.use_rekernel || false }}
       cve_2026_43499_patch: ${{ inputs.cve_2026_43499_patch }}
-      supp_op: ${{ inputs.supp_op || false }}
       enable_susfs: ${{ !inputs.cancel_susfs }}
       droidspaces: ${{ inputs.droidspaces || 'off' }}
       droidspaces_ntsync: ${{ inputs.droidspaces_ntsync || false }}

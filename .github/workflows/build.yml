@@ -74,10 +74,6 @@ on:
         required: true
         type: boolean
         default: true
-      supp_op:
-        required: false
-        type: boolean
-        default: false
       droidspaces:
         required: false
         type: string
@@ -438,13 +434,6 @@ jobs:
             fi
           fi
 
-      - name: 添加 一加 骁龙8 Elite/Gen5 处理器支持
-        if: inputs.supp_op
-        working-directory: ${{ env.KERNEL_ROOT }}/common/drivers
-        run: |
-          echo "使用本仓库 hmbird_patch.c..."
-          cp "$GITHUB_WORKSPACE/hmbird_patch.c" ./hmbird_patch.c
-          echo "obj-y += hmbird_patch.o" >> Makefile
 
       - name: 确定 KernelSU 分支
         id: ksu-branch

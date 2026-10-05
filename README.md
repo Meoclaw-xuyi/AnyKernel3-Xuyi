@@ -47,9 +47,8 @@ Built upon [AnyKernel3](https://github.com/osm0sis/AnyKernel3), this repository 
 | ⚡ KPM | Optional KPM feature / build-time patching |
 | 🔔 Re-Kernel | Optional Re-Kernel driver integration |
 | 🩹 CVE-2026-43499 | Optional automatic application of the rtmutex fix |
-| 📱 OnePlus Snapdragon 8 Elite / Gen5 Support | Optional: Add support for OnePlus Snapdragon 8 Elite / Gen5 processor |
 | 🐳 Droidspaces | Optional container support with NTSync kernel compatibility patch |
-| 🧩 Skip Incompatible | Optional: auto-skip incompatible or unusable features (except SUSFS and OnePlus 8 Elite/Gen5 support) instead of failing the build |
+| 🧩 Skip Incompatible | Optional: auto-skip incompatible or unusable features (except SUSFS) instead of failing the build |
 | 📱 A17 System Target Switch | Optional (default off): build-time choice of target system — off = the zip flashes only on Android 12-16; on = only on Android 17 |
 | 📱 A17 Compatibility Switch | Optional: choose at build time whether the zip ships the universal flash template (system-version agnostic, Android 12-17); off keeps the upstream script (5.10/5.15/6.1/6.6/6.12 only) |
 
