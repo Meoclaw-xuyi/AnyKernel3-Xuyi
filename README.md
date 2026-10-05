@@ -95,7 +95,7 @@ A commit is a hash string representing the state of a repository at a certain po
 - [zzh20188/GKI_KernelSU_SUSFS](https://github.com/zzh20188/GKI_KernelSU_SUSFS) / [WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS) / [LingLuo17/AnyKernel3](https://github.com/LingLuo17/AnyKernel3)
 - [SukiSU](https://sukisu.org/) / [ReSukiSU](https://resukisu.github.io/)
 - [SUSFS](https://gitlab.com/simonpunk/susfs4ksu)
-- [YuzakiKokuban/android_kernel_xiaomi_sm8850](https://github.com/YuzakiKokuban/android_kernel_xiaomi_sm8850) — Xiaomi 17 series (sm8850) bootable Android 17 / 6.12 kernel (already forked to [Meoclaw-xuyi/android_kernel_xiaomi_sm8850](https://github.com/Meoclaw-xuyi/android_kernel_xiaomi_sm8850))
+- [YuzakiKokuban/android_kernel_xiaomi_sm8850]
 - [cctv18/android_gki_kernel_common](https://github.com/cctv18/android_gki_kernel_common) — `android16-6.12-2025-06` GKI baseline source
 
 <div align="center">
