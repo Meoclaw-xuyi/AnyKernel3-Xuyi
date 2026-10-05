@@ -1269,7 +1269,16 @@ jobs:
             echo "# CONFIG_MODVERSIONS is not set" >> "$DEFCONFIG"
           fi
           grep -qE "^# CONFIG_MODVERSIONS is not set" "$DEFCONFIG" || { echo "::error::MODVERSIONS 关闭失败"; exit 1; }
-          echo "A17 模式：已关闭 MODVERSIONS，厂商模块跳过符号 CRC 校验（修复 node_cache 等拒载 panic）"
+          # MODVERSIONS=n 后 module_layout 不再导出，必须同步从 KMI 符号清单移除，
+          # 否则 kleaf 的 kmi_symbol_list_strict_mode 检查报
+          # "Symbols missing from the ksymtab: module_layout" 构建失败。
+          # 注意清单内符号行带前导空格（如 "  module_layout"）
+          shopt -s nullglob
+          for f in "$KERNEL_ROOT"/common/android/abi_gki_aarch64*; do
+            case "$f" in *.stg) continue ;; esac
+            sed -i '/^[[:space:]]*module_layout[[:space:]]*$/d' "$f"
+          done
+          echo "A17 模式：已关闭 MODVERSIONS 并从 KMI 符号清单移除 module_layout（厂商模块跳过符号 CRC 校验）"
 
       - name: 配置内核名称
         working-directory: ${{ env.KERNEL_ROOT }}
