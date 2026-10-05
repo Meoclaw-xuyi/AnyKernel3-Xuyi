@@ -49,6 +49,7 @@ Built upon [AnyKernel3](https://github.com/osm0sis/AnyKernel3), this repository 
 | 🩹 CVE-2026-43499 | Optional automatic application of the rtmutex fix |
 | 🐳 Droidspaces | Optional container support with NTSync kernel compatibility patch |
 | 🧩 Skip Incompatible | Optional: auto-skip incompatible or unusable features (except SUSFS) instead of failing the build |
+| ✅ 支持Android17 | 开启即支持 Android 17 系统版本，但仅 Android 17 系统版本可刷入；关闭即不支持 Android 17 系统版本，Android 12-16 均可刷入 |
 
 ## 🚀 Usage
 
