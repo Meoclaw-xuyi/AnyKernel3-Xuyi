@@ -1251,34 +1251,6 @@ jobs:
           CONFIG_KSU_SUSFS_SUS_MAP=y
           EOF
 
-      # A17 模式修复：HyperOS4/Android 17 设备的厂商模块（如 MTK node_cache.ko）
-      # 按官方 GKI 构建时的符号 CRC 导入；本仓库 ZRAM 补丁栈（升级版 LZ4 +
-      # lz4k/lz4kd）改变 LZ4 头文件上下文，genksyms 为全部 LZ4 导出符号生成新
-      # CRC，模块加载被 "disagrees about version of symbol" 拒载 → init panic
-      # 不开机（console-ramoops 实锤 node_cache 的 LZ4_decompress_safe /
-      # LZ4_compress_default）。
-      # 修复 = v3 "lz4crc12" 方案：保持 MODVERSIONS 开启（vermagic 继续匹配），
-      # 构建后将 Image 中 12 个 LZ4 符号的 __kcrctab 槽位改写为官方 android15-8
-      # 值（KMI 冻结，对该分支全部子版本有效）。实测同 KMI 下 LZ4 函数 ABI 兼容，
-      # 仅 CRC 值不同。内置官方表目前仅覆盖 android15-6.6。
-      - name: A17 模式：还原 LZ4 符号官方 CRC（修复厂商模块 CRC 拒载不开机）
-        if: inputs.a17_compat == true
-        run: |
-          if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
-            echo "::warning title=A17 CRC 还原跳过::内置官方 CRC 表仅覆盖 android15-6.6（android15-8 KMI）；${{ inputs.kernel_version }} 开启 ZRAM 时厂商模块可能仍因 CRC 不符拒载"
-            exit 0
-          fi
-          if [ "${{ inputs.android_version }}" == "android12" ] || [ "${{ inputs.android_version }}" == "android13" ]; then
-            TARGET_PATH="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-          else
-            TARGET_PATH="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64"
-          fi
-          if [ ! -f "$TARGET_PATH/Image" ]; then
-            echo "::error::未找到 $TARGET_PATH/Image，无法执行 A17 CRC 还原"
-            exit 1
-          fi
-          python3 "$GITHUB_WORKSPACE/scripts/a17_crc_restore.py" "$TARGET_PATH/Image"
-
       - name: 配置内核名称
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
@@ -1484,6 +1456,35 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           compression-level: 9
+
+      # A17 模式修复：HyperOS4/Android 17 设备的厂商模块（如 MTK node_cache.ko）
+      # 按官方 GKI 构建时的符号 CRC 导入；本仓库 ZRAM 补丁栈（升级版 LZ4 +
+      # lz4k/lz4kd）改变 LZ4 头文件上下文，genksyms 为全部 LZ4 导出符号生成新
+      # CRC，模块加载被 "disagrees about version of symbol" 拒载 → init panic
+      # 不开机（console-ramoops 实锤 node_cache 的 LZ4_decompress_safe /
+      # LZ4_compress_default）。
+      # 修复 = v3 "lz4crc12" 方案：保持 MODVERSIONS 开启（vermagic 继续匹配），
+      # 构建后将 Image 中 12 个 LZ4 符号的 __kcrctab 槽位改写为官方 android15-8
+      # 值（KMI 冻结，对该分支全部子版本有效）。实测同 KMI 下 LZ4 函数 ABI 兼容，
+      # 仅 CRC 值不同。内置官方表目前仅覆盖 android15-6.6。
+      # 位置约束：必须在 编译内核 之后（Image 已生成）、KPM 补丁 之前。
+      - name: A17 模式：还原 LZ4 符号官方 CRC（修复厂商模块 CRC 拒载不开机）
+        if: inputs.a17_compat == true
+        run: |
+          if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
+            echo "::warning title=A17 CRC 还原跳过::内置官方 CRC 表仅覆盖 android15-6.6（android15-8 KMI）；${{ inputs.kernel_version }} 开启 ZRAM 时厂商模块可能仍因 CRC 不符拒载"
+            exit 0
+          fi
+          if [ "${{ inputs.android_version }}" == "android12" ] || [ "${{ inputs.android_version }}" == "android13" ]; then
+            TARGET_PATH="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
+          else
+            TARGET_PATH="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64"
+          fi
+          if [ ! -f "$TARGET_PATH/Image" ]; then
+            echo "::error::未找到 $TARGET_PATH/Image，无法执行 A17 CRC 还原"
+            exit 1
+          fi
+          python3 "$GITHUB_WORKSPACE/scripts/a17_crc_restore.py" "$TARGET_PATH/Image"
 
       - name: 应用 KPM 补丁（构建期修补 Image）
         if: startsWith(inputs.use_kpm, 'patched') && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'ReSukiSU')
