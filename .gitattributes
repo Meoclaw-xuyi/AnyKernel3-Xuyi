@@ -2,3 +2,5 @@
 # lines and kernel-style tab indentation.
 security_patch/*.patch -whitespace
 scripts/sukisu_compat/*.patch -whitespace
+# Vendored kernel source: keep bytes exactly as upstream (no EOL munging)
+kernel/sm8850/** -text
