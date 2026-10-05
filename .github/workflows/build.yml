@@ -402,8 +402,9 @@ jobs:
         run: |
           echo "BUILTIN_SOURCE=true：跳过 AOSP repo sync，使用仓库内 kernel/sm8850（Kokuban android16-6.12 可开机基线）"
           cp -a "$GITHUB_WORKSPACE/kernel/sm8850" ./common
-          # zip -> Windows 路径丢失可执行位，kbuild 需直接调用 scripts/ 下的脚本，统一补回
-          chmod -R u+x ./common/scripts
+          # zip -> Windows 路径丢失可执行位，kbuild 会直接调用散布全树的脚本
+          # （scripts/、arch/*/vdso、tools/ 等），对整个源码树统一补回
+          chmod -R u+x ./common
           grep -E "^(VERSION|PATCHLEVEL|SUBLEVEL) " ./common/Makefile
 
       - name: 提取实际子版本号
