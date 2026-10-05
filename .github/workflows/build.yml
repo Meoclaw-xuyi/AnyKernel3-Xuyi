@@ -1251,6 +1251,26 @@ jobs:
           CONFIG_KSU_SUSFS_SUS_MAP=y
           EOF
 
+      # A17 模式修复：HyperOS4/Android 17 设备的厂商模块（如 MTK node_cache.ko）
+      # 按官方 GKI 构建时的符号 CRC 导入；本仓库补丁栈（KSU/SUSFS/ZRAM 升级版
+      # LZ4 等）会改变部分符号的 genksyms CRC，模块加载时被
+      # "disagrees about version of symbol" 拒载（实测 node_cache 的
+      # LZ4_decompress_safe / LZ4_compress_default）→ init panic 不开机。
+      # 同 KMI 下 ABI 实际兼容（仅 CRC 值不同），关闭内核侧 MODVERSIONS 后
+      # 模块按符号名解析、跳过 CRC 校验即可正常加载。仅 a17 模式启用；
+      # a12-16 模式保持官方 MODVERSIONS 行为不变。
+      - name: A17 模式：关闭 MODVERSIONS（修复厂商模块 CRC 校验拒载不开机）
+        if: inputs.a17_compat == true
+        run: |
+          if grep -q "^CONFIG_MODVERSIONS=y" "$DEFCONFIG"; then
+            sed -i 's/^CONFIG_MODVERSIONS=y$/# CONFIG_MODVERSIONS is not set/' "$DEFCONFIG"
+          fi
+          if ! grep -qE "^# CONFIG_MODVERSIONS is not set" "$DEFCONFIG"; then
+            echo "# CONFIG_MODVERSIONS is not set" >> "$DEFCONFIG"
+          fi
+          grep -qE "^# CONFIG_MODVERSIONS is not set" "$DEFCONFIG" || { echo "::error::MODVERSIONS 关闭失败"; exit 1; }
+          echo "A17 模式：已关闭 MODVERSIONS，厂商模块跳过符号 CRC 校验（修复 node_cache 等拒载 panic）"
+
       - name: 配置内核名称
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
