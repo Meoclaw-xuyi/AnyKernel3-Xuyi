@@ -211,9 +211,14 @@ jobs:
           cmake -S /tmp/pahole -B /tmp/pahole/build -DCMAKE_BUILD_TYPE=Release
           cmake --build /tmp/pahole/build -j"$(nproc --all)"
           sudo cmake --install /tmp/pahole/build
+          # 装进 /usr/local/lib 的 libdwarves*.so 必须让动态链接器看得见，
+          # 否则 pahole 一执行就是 cannot open shared object file（退出码 127）。
+          sudo ldconfig
+          echo "LD_LIBRARY_PATH=/usr/local/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
           hash -r
-          which pahole
-          pahole --version
+          echo "PATH 中的 pahole: $(command -v pahole)"
+          test "$(command -v pahole)" = "/usr/local/bin/pahole" || echo "::warning::PATH 中的 pahole 不是 /usr/local/bin/pahole"
+          /usr/local/bin/pahole --version || { echo "::error::新版 pahole 无法执行（共享库路径问题）"; exit 1; }
 
       - name: 配置 ccache
         run: |
