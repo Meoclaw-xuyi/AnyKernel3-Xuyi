@@ -70,7 +70,10 @@ CONFIG_SQUASHFS_ZSTD=y
 # CONFIG_IP_NF_TARGET_TTL is not set
 # CONFIG_KSM is not set
 # CONFIG_LOCALVERSION_AUTO is not set
-CONFIG_LSM="landlock,lockdown,yama,loadpin,safesetid,selinux,smack,tomoyo,apparmor,ipe,bpf"
+# LSM 与 Kokuban 对齐但保留 baseband_guard：use_bbg 开启时 BBG 自检要求
+# 其 LSM 在列（仅影响初始化顺序，不影响符号 CRC）；未开 BBG 时 BBG 步骤
+# 不运行，此处 baseband_guard 无驱动对应、kconfig 自动忽略，无副作用
+CONFIG_LSM="landlock,lockdown,yama,loadpin,safesetid,selinux,baseband_guard,smack,tomoyo,apparmor,ipe,bpf"
 CONFIG_MQ_IOSCHED_ADIOS=m
 # CONFIG_NETFILTER_XT_TARGET_HL is not set
 # CONFIG_NET_SCH_CAKE is not set
