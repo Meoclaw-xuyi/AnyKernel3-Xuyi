@@ -567,20 +567,21 @@ jobs:
           fi
 
       # SukiSU 的 builtin 分支（内建+SUSFS 产品线）与 main 分支相互独立，
-      # UAPI 版本落后于官方管理器（管理器按 main 分支构建，UAPI 4）。
+      # UAPI 版本落后于官方管理器（管理器按 main 分支构建）。
       # 内核 UAPI < 管理 UAPI 时，管理器首页会误报"需要更新内核"。
-      # 此步骤把官方 main 的 UAPI 2->4 内核侧提交移植到 builtin 检出：
+      # 此步骤把官方 main 的 UAPI 2->5 内核侧提交/常量移植到 builtin 检出：
       #   - 86e9b3bf: scoped su-session driver fd (UAPI 3)
       #   - dda78702: KSU_GET_INFO_FLAG_BUNDLED (UAPI 4, 仅 UAPI 号+flag 常量,
       #     其 MODULE 部分依赖 builtin 不存在的 ksu_bundled，内建编译不参与)
-      # 若上游 builtin 日后自行同步 UAPI >= 4，本步骤自动跳过。
+      #   - EVENT_SERVICES 的 start/skip 返回语义 (UAPI 5)：builtin 的实现与
+      #     main 逐字相同，缺的只是版本号（并非常量或 ioctl）。
+      # 若上游 builtin 日后自行同步 UAPI >= 5，本步骤自动跳过。
       # 注意：上游可能只 backport 了一部分（例如 ksu_install_su_fd /
       # allow_su_session 已进 builtin，但版本号与 FLAG_BUNDLED 没动）。
       # 那时 patch 会把已存在的 hunk 判为 "previously applied" 并以非 0 退出，
       # 这并非错误，故本步骤容忍 patch 退出码，一律以补丁后的内容校验为准。
-      # 版本校验取 ">= 4"：main 分支现已到 5（EVENT_SERVICES 的 start/skip
-      # 语义，其实现 builtin 也已具备），写死 == 4 会把 SukiSU+关闭 SUSFS
-      # （走 main 布局）的构建误判为失败。
+      # 版本校验取 ">= 5"（对齐目标即管理器当前 UAPI）：写死等号会把上游已
+      # 前进的分支（例如走 main 布局的 SukiSU+关闭 SUSFS）误判为失败。
       - name: 同步 SukiSU 内核 UAPI 版本（对齐官方管理器）
         if: inputs.ksu_variant == 'SukiSU'
         working-directory: ${{ env.KERNEL_ROOT }}
@@ -606,12 +607,12 @@ jobs:
           echo "builtin 分支当前 UAPI 版本: ${CURRENT_UAPI:-未知}"
 
           PATCHED=false
-          if [ "${CURRENT_UAPI:-0}" -ge 4 ]; then
-            echo "上游已包含 UAPI >= 4，跳过本地对齐补丁"
+          if [ "${CURRENT_UAPI:-0}" -ge 5 ]; then
+            echo "上游已包含 UAPI >= 5，跳过本地对齐补丁"
           else
-            PATCH_FILE="$GITHUB_WORKSPACE/scripts/ksu_uapi_sync/builtin-uapi4.patch"
+            PATCH_FILE="$GITHUB_WORKSPACE/scripts/ksu_uapi_sync/builtin-uapi5.patch"
             if patch -p1 --forward -d KernelSU < "$PATCH_FILE"; then
-              echo "已应用 UAPI 4 对齐补丁 (su-session fd + FLAG_BUNDLED)"
+              echo "已应用 UAPI 5 对齐补丁 (su-session fd + FLAG_BUNDLED + EVENT_SERVICES start/skip)"
             else
               echo "::warning title=UAPI 对齐补丁未完全套用::部分 hunk 判定为已应用（上游已 backport）或被拒，转入内容校验"
             fi
@@ -624,8 +625,8 @@ jobs:
           fi
 
           FINAL_UAPI=$(read_uapi)
-          if [ "${FINAL_UAPI:-0}" -lt 4 ]; then
-            echo "::error::UAPI 版本校验失败（期望 >= 4，实际 ${FINAL_UAPI:-未知}）：补丁 hunk 可能被拒，请重新生成 scripts/ksu_uapi_sync/builtin-uapi4.patch"
+          if [ "${FINAL_UAPI:-0}" -lt 5 ]; then
+            echo "::error::UAPI 版本校验失败（期望 >= 5，实际 ${FINAL_UAPI:-未知}）：补丁 hunk 可能被拒，请重新生成 scripts/ksu_uapi_sync/builtin-uapi5.patch"
             exit 1
           fi
 
@@ -640,8 +641,10 @@ jobs:
               || MISSING="$MISSING supercall.h:ksu_is_su_session_fd"
             grep -q "allow_su_session" KernelSU/kernel/supercall/dispatch.c \
               || MISSING="$MISSING dispatch.c:allow_su_session"
+            grep -q "services_started" KernelSU/kernel/supercall/dispatch.c \
+              || MISSING="$MISSING dispatch.c:services_started(UAPI5 EVENT_SERVICES start/skip)"
             if [ -n "$MISSING" ]; then
-              echo "::error::UAPI 对齐不完整，缺少:$MISSING（请重新生成 scripts/ksu_uapi_sync/builtin-uapi4.patch）"
+              echo "::error::UAPI 对齐不完整，缺少:$MISSING（请重新生成 scripts/ksu_uapi_sync/builtin-uapi5.patch）"
               exit 1
             fi
           fi

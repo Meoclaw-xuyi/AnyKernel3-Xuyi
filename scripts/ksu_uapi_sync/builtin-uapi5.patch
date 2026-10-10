@@ -2,14 +2,15 @@ diff --git a/kernel/include/uapi/supercall.h b/kernel/include/uapi/supercall.h
 index bfdc1d14..8db9f90d 100644
 --- a/kernel/include/uapi/supercall.h
 +++ b/kernel/include/uapi/supercall.h
-@@ -13,7 +13,9 @@
+@@ -13,7 +13,10 @@
  #endif
  
  // 2: allowlist v4 root profile flag
 -DECLARE(__u32, KERNEL_SU_UAPI_VERSION, 2);
 +// 3: scoped su-session driver fd
 +// 4: add KSU_GET_INFO_FLAG_BUNDLED
-+DECLARE(__u32, KERNEL_SU_UAPI_VERSION, 4);
++// 5: add EVENT_SERVICES with a start/skip result
++DECLARE(__u32, KERNEL_SU_UAPI_VERSION, 5);
  
  /* Magic numbers for reboot hook to install fd */
  DECLARE(__u32, KSU_INSTALL_MAGIC1, 0xDEADBEEF);
