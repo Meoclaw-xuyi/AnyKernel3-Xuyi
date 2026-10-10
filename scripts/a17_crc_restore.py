@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""A17 mode: restore the official android15-8 OGKI modversions CRCs of the 12
-exported LZ4 symbols inside a CI-built GKI Image.
+"""Restore the official OGKI modversions CRCs of the exported LZ4 symbols inside
+a CI-built GKI Image (one table per KMI branch).
 
 Why: the repo's ZRAM patch stack (upgraded LZ4 + lz4k/lz4kd) changes the LZ4
 header context, so genksyms emits NEW CRCs for every exported LZ4 symbol.
-HyperOS4/Android 17 vendor modules (e.g. MTK node_cache.ko, which imports
+HyperOS vendor modules (e.g. MTK/Qualcomm node_cache.ko, which imports
 LZ4_decompress_safe + LZ4_compress_default) carry the OFFICIAL CRCs and get
 rejected:
 
@@ -14,10 +14,12 @@ rejected:
     init: Failed to load kernel modules
     Kernel panic - not syncing: Attempted to kill init!
 
-Fix: overwrite the 12 __kcrctab slots with the official android15-8 values
-(KMI-frozen, valid for every sublevel of the android15-6.6 branch) - the same
-proven approach as the v3 "lz4crc12" build.  MODVERSIONS stays ENABLED so the
-vendor modules' vermagic ("modversions" token) keeps matching the kernel.
+Fix: overwrite the __kcrctab slots of the symbols listed in the branch table
+with the official values (KMI-frozen, valid for every sublevel of that branch)
+- the same proven approach as the v3 "lz4crc12" build.  MODVERSIONS stays
+ENABLED so the vendor modules' vermagic ("modversions" token) keeps matching.
+Which symbols exist differs per branch: android14-6.1 exports two, android15-6.6
+all twelve of the list below.
 
 Layout facts this relies on (same as crc_restore.py):
   - struct kernel_symbol = 12 bytes {value_offset; name_offset; namespace_offset}
@@ -44,7 +46,6 @@ OFFICIAL = {
     b"LZ4_resetStreamHC":             0xD25422CD,
     b"LZ4_setStreamDecode":           0x3B321462,
 }
-LZ4 = sorted(OFFICIAL)
 
 # android16-6.12 (KMI android16-5/6) official LZ4 CRCs - read out of a real
 # CI-built 6.12.69 Image WITHOUT the zram stack (clean branch-native CRCs,
@@ -64,7 +65,21 @@ OFFICIAL_612 = {
     b"LZ4_setStreamDecode":           0xB0AC7316,
 }
 
+# android14-6.1 (KMI android14-11) official LZ4 CRCs - read out of the real
+# Redmi K80 (zorn) stock boot.img (6.1.157-android14-11-g2de7246565ac-mi,
+# header v4, ramdisk_size=0).  That KMI exports ONLY these two LZ4 symbols -
+# the other ten of the android15-8 list do not exist there - and their values
+# equal the android15-8 ones because genksyms hashes the symbol prototype,
+# which is unchanged between 6.1 and 6.6.  The extra LZ4 exports that the zram
+# (lz4k) stack adds need no restore: vendor modules were built against the
+# official KMI and never import them.
+OFFICIAL_61 = {
+    b"LZ4_compress_default":          0x4F4D78C5,
+    b"LZ4_decompress_safe":           0xC7C1107A,
+}
+
 TABLES = {
+    "6.1": OFFICIAL_61,
     "6.6": OFFICIAL,
     "6.12": OFFICIAL_612,
 }
@@ -127,9 +142,10 @@ def array_of(b, entry, limit=64):
     return base, (end - base) // 12 + 1
 
 
-def resolve(b):
-    """Locate the ONE ksymtab array holding all 12 LZ4 symbols."""
-    cands = entries_for(b, set(LZ4))
+def resolve(b, names):
+    """Locate the ONE ksymtab array holding all of `names`."""
+    names = set(names)
+    cands = entries_for(b, names)
     if not cands:
         raise SystemExit("::error::no LZ4 ksymtab entries found in Image")
     groups = {}
@@ -144,21 +160,25 @@ def resolve(b):
             ents = [e for e in ents if (e - base) % 12 == 0]
             if ents:
                 found[name] = (min(ents), (min(ents) - base) // 12)
-        if len(found) == len(LZ4):
+        if len(found) == len(names):
             return base, count, found
-    raise SystemExit("::error::could not locate a ksymtab array with all 12 LZ4 symbols")
+    raise SystemExit(
+        "::error::could not locate a ksymtab array with all %d LZ4 symbols (%s)"
+        % (len(names), ", ".join(sorted(n.decode() for n in names)))
+    )
 
 
 def restore(path, table):
     b = open(path, "rb").read()
     print("Image: %d bytes" % len(b))
-    base, count, found = resolve(b)
+    names = sorted(table)
+    base, count, found = resolve(b, names)
     crc_base = base + 12 * count
     print("  ksymtab array 0x%x  count %d  ->  kcrctab_base 0x%x" % (base, count, crc_base))
 
     out = bytearray(b)
     changed = 0
-    for name in LZ4:
+    for name in names:
         _e, idx = found[name]
         off = crc_base + 4 * idx
         cur = u32(out, off)
@@ -171,25 +191,25 @@ def restore(path, table):
         print("    %-30s 0x%08x -> 0x%08x (official)" % (name.decode(), cur, want))
 
     if changed == 0:
-        print("::notice title=A17 CRC restore::all 12 LZ4 CRCs already official, Image unchanged")
+        print("::notice title=CRC restore::all %d LZ4 CRCs already official, Image unchanged" % len(names))
         return
 
     open(path, "wb").write(bytes(out))
 
     # verify with a fresh parse
     nb = open(path, "rb").read()
-    _b2, _c2, n_found = resolve(nb)
+    _b2, _c2, n_found = resolve(nb, names)
     crc2 = _b2 + 12 * _c2
-    bad = [n for n in LZ4 if u32(nb, crc2 + 4 * n_found[n][1]) != table[n]]
+    bad = [n for n in names if u32(nb, crc2 + 4 * n_found[n][1]) != table[n]]
     if bad:
         raise SystemExit("::error::CRC readback mismatch for %s" % [x.decode() for x in bad])
-    print("restored %d/12 LZ4 symbol CRCs to official values (read back OK)" % changed)
-    print("::notice title=A17 CRC restore::%d/12 LZ4 symbol CRCs restored to official OGKI values" % changed)
+    print("restored %d/%d LZ4 symbol CRCs to official values (read back OK)" % (changed, len(names)))
+    print("::notice title=CRC restore::%d/%d LZ4 symbol CRCs restored to official OGKI values" % (changed, len(names)))
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        raise SystemExit("usage: a17_crc_restore.py <Image> <kernel-version, e.g. 6.6|6.12>")
+        raise SystemExit("usage: a17_crc_restore.py <Image> <kernel-version, e.g. 6.1|6.6|6.12>")
     img, kv = sys.argv[1], sys.argv[2]
     if kv not in TABLES:
         raise SystemExit("::error::no official CRC table for kernel version %s" % kv)
