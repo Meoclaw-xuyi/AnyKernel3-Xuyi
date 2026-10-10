@@ -574,6 +574,13 @@ jobs:
       #   - dda78702: KSU_GET_INFO_FLAG_BUNDLED (UAPI 4, 仅 UAPI 号+flag 常量,
       #     其 MODULE 部分依赖 builtin 不存在的 ksu_bundled，内建编译不参与)
       # 若上游 builtin 日后自行同步 UAPI >= 4，本步骤自动跳过。
+      # 注意：上游可能只 backport 了一部分（例如 ksu_install_su_fd /
+      # allow_su_session 已进 builtin，但版本号与 FLAG_BUNDLED 没动）。
+      # 那时 patch 会把已存在的 hunk 判为 "previously applied" 并以非 0 退出，
+      # 这并非错误，故本步骤容忍 patch 退出码，一律以补丁后的内容校验为准。
+      # 版本校验取 ">= 4"：main 分支现已到 5（EVENT_SERVICES 的 start/skip
+      # 语义，其实现 builtin 也已具备），写死 == 4 会把 SukiSU+关闭 SUSFS
+      # （走 main 布局）的构建误判为失败。
       - name: 同步 SukiSU 内核 UAPI 版本（对齐官方管理器）
         if: inputs.ksu_variant == 'SukiSU'
         working-directory: ${{ env.KERNEL_ROOT }}
@@ -598,26 +605,47 @@ jobs:
           CURRENT_UAPI=$(read_uapi)
           echo "builtin 分支当前 UAPI 版本: ${CURRENT_UAPI:-未知}"
 
+          PATCHED=false
           if [ "${CURRENT_UAPI:-0}" -ge 4 ]; then
             echo "上游已包含 UAPI >= 4，跳过本地对齐补丁"
           else
-            if ! patch -p1 --forward -d KernelSU < "$GITHUB_WORKSPACE/scripts/ksu_uapi_sync/builtin-uapi4.patch"; then
-              echo "::error::UAPI 对齐补丁应用失败：builtin 分支 supercall 代码可能已更新，请重新生成 scripts/ksu_uapi_sync/builtin-uapi4.patch"
-              exit 1
+            PATCH_FILE="$GITHUB_WORKSPACE/scripts/ksu_uapi_sync/builtin-uapi4.patch"
+            if patch -p1 --forward -d KernelSU < "$PATCH_FILE"; then
+              echo "已应用 UAPI 4 对齐补丁 (su-session fd + FLAG_BUNDLED)"
+            else
+              echo "::warning title=UAPI 对齐补丁未完全套用::部分 hunk 判定为已应用（上游已 backport）或被拒，转入内容校验"
             fi
-            echo "已应用 UAPI 4 对齐补丁 (su-session fd + FLAG_BUNDLED)"
+            REJECTS=$(find KernelSU -name '*.rej' | head -n 20)
+            if [ -n "$REJECTS" ]; then
+              echo "::warning title=存在未套用的 hunk::$(echo "$REJECTS" | tr '\n' ' ')"
+              find KernelSU -name '*.rej' -delete
+            fi
+            PATCHED=true
           fi
 
           FINAL_UAPI=$(read_uapi)
-          if [ "${FINAL_UAPI:-0}" -ne 4 ]; then
-            echo "::error::UAPI 版本校验失败（期望 4，实际 ${FINAL_UAPI:-未知}）"
+          if [ "${FINAL_UAPI:-0}" -lt 4 ]; then
+            echo "::error::UAPI 版本校验失败（期望 >= 4，实际 ${FINAL_UAPI:-未知}）：补丁 hunk 可能被拒，请重新生成 scripts/ksu_uapi_sync/builtin-uapi4.patch"
             exit 1
           fi
-          if ! grep -q "ksu_install_su_fd" KernelSU/kernel/supercall/supercall.c; then
-            echo "::error::ksu_install_su_fd 校验失败，UAPI 补丁不完整"
-            exit 1
+
+          if [ "$PATCHED" = true ]; then
+            # 补丁涉及的功能符号必须齐备（无论来自本补丁还是上游 backport）
+            MISSING=""
+            grep -q "KSU_GET_INFO_FLAG_BUNDLED" "$UAPI_FILE" \
+              || MISSING="$MISSING uapi/supercall.h:FLAG_BUNDLED"
+            grep -q "ksu_install_su_fd" KernelSU/kernel/supercall/supercall.c \
+              || MISSING="$MISSING supercall.c:ksu_install_su_fd"
+            grep -q "ksu_is_su_session_fd" KernelSU/kernel/supercall/supercall.h \
+              || MISSING="$MISSING supercall.h:ksu_is_su_session_fd"
+            grep -q "allow_su_session" KernelSU/kernel/supercall/dispatch.c \
+              || MISSING="$MISSING dispatch.c:allow_su_session"
+            if [ -n "$MISSING" ]; then
+              echo "::error::UAPI 对齐不完整，缺少:$MISSING（请重新生成 scripts/ksu_uapi_sync/builtin-uapi4.patch）"
+              exit 1
+            fi
           fi
-          echo "内核 UAPI 已对齐官方管理器 (v4)，刷入后不再出现\"需要更新内核\"提示"
+          echo "内核 UAPI 已对齐官方管理器 (v${FINAL_UAPI})，刷入后不再出现\"需要更新内核\"提示"
 
       # SukiSU builtin 分支的 hook/lsm_hook.c 仍以旧签名调用
       # security_add_hooks(hooks, count, "ksu")，6.8+ 内核要求 const struct lsm_id *，
